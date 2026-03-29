@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from tools.market.market import get_market_for_prior_date
 from tools.notification.telegram_notification import send_notification
+from .researcher import Researcher
 
 load_dotenv(override=True)
 
@@ -34,11 +35,13 @@ As an example:
     - If the last saved price was $100 and the current price is $100.50, that is a 0.5% increase, which is not more than a 1% change, so you should not send a notification.
 
 From all the stocks that have changed over the threshold, please select only the top 5 stocks with the highest percentage change to continue your processing.
-
-The notification message should include the stock symbol, the current price, the previous price, and the percentage change in the notification message.
+With this top 5, you should research each company using the research agent tool to find the most relevant information about the company that could be useful for an investor. The input to the research agent tool should be the name of the company to research, and it will return relevant information about the company that could be useful for an investor.
+After finishing the research, you should send a notification to the user with the relevant details.
+The notification message should include the stock symbol, the current price, the previous price, and the percentage change in the notification message. Also include the relevant information about the company that you found using the research agent tool in the notification message.
 
 You have at your disposal the following tools:
 - get_market_for_prior_date(today): Gets the market data information for the prior date from the data passed. The function will get the market data for the prior date. It returns a dictionary mapping stock symbols to their prices.
+- research agent as tool: You can use the research agent tool to research any company that has had a significant price change. The input to this tool should be the name of the company to research, and it will return relevant information about the company that could be useful for an investor.
 - send_notification(notification): Sends a notification to the user. The notification message should include the stock symbol, the current price, the previous price, and the percentage change in the notification message.
 
 For reference this is today's date: {date.today().isoformat()}.
@@ -53,17 +56,21 @@ For reference this is today's date: {date.today().isoformat()}.
 
 monitor_mcp_servers = []
 
+researcher_agent = Researcher().create_agent()
+
+research_tool = researcher_agent.as_tool(
+    tool_name="research_tool",
+    tool_description="Researches a given company and provides relevant information about it. The input to this tool should be the name of the company to research."
+)
+
 monitor_tools = [
     get_market_for_prior_date,
-    send_notification
-]
-
-monitor_handoffs = [
-    
+    send_notification,
+    research_tool
 ]
 
 class Monitor:
-    async def create_agent(self) -> Agent:
+    def create_agent(self) -> Agent:
         print("Creating Monitor agent...")
         agent = Agent(
             name="Monitor Agent",
@@ -77,7 +84,7 @@ class Monitor:
         print(f"Using price change threshold of {PRICE_CHANGE_THRESHOLD_PERCENT}%")
         print("Running Monitor agent...")
         try:
-            agent = await self.create_agent()
+            agent = self.create_agent()
             await Runner.run(agent, monitor_message, max_turns=MAX_TURNS)
         except Exception as e:
             print(f"An error occurred: {e}")

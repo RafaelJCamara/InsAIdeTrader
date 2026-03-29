@@ -1,7 +1,5 @@
-from email.mime import message
 import os
 from agents import function_tool
-import requests
 from telegram import Bot
 
 
@@ -24,18 +22,3 @@ async def send_notification(notification: str):
     print(notification)
     await tg_bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"🤖 Agent Alert: {notification}")
     print("Notification sent!")
-
-# @function_tool
-# def send_notification(notification: str):
-#     """Sends a notification to the user.
-
-#     Args:
-#         notification (str): The notification message to send.
-#     """
-#     print("Creating Telegram Bot client...")
-#     # Initialize Telegram Bot
-#     tg_bot = Bot(token=TELEGRAM_TOKEN)
-#     print("Sending notification to user:")
-#     print(notification)
-#     # await tg_bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"🤖 Agent Alert: {notification}")
-#     print("Notification sent!")
