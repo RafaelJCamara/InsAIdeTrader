@@ -4,7 +4,7 @@ from agents import Agent, OpenAIChatCompletionsModel, Runner
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from tools.market.market import get_market_for_prior_date
-from tools.notification.push_notification import send_notification
+from tools.notification.telegram_notification import send_notification
 
 load_dotenv(override=True)
 
@@ -32,6 +32,8 @@ As an example:
     - If the last saved price was $100 and the current price is $104, that is a 4% increase, which is more than a 1% change, so you should send a notification. 
     - If the last saved price was $100 and the current price is $98, that is a 2% decrease, which is more than a 1% change, so you should send a notification. 
     - If the last saved price was $100 and the current price is $100.50, that is a 0.5% increase, which is not more than a 1% change, so you should not send a notification.
+
+From all the stocks that have changed over the threshold, please select only the top 5 stocks with the highest percentage change to continue your processing.
 
 The notification message should include the stock symbol, the current price, the previous price, and the percentage change in the notification message.
 
@@ -67,13 +69,15 @@ class Monitor:
             name="Monitor Agent",
             instructions=instructions,
             model=gemini_model,
-            tools=monitor_tools,
-            handoffs=monitor_handoffs,
+            tools=monitor_tools
         )
         return agent
     
     async def run(self):
         print(f"Using price change threshold of {PRICE_CHANGE_THRESHOLD_PERCENT}%")
         print("Running Monitor agent...")
-        agent = await self.create_agent()
-        await Runner.run(agent, monitor_message, max_turns=MAX_TURNS)
+        try:
+            agent = await self.create_agent()
+            await Runner.run(agent, monitor_message, max_turns=MAX_TURNS)
+        except Exception as e:
+            print(f"An error occurred: {e}")
