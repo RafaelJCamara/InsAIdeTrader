@@ -29,11 +29,12 @@ monitor_tools = [
 
 class Researcher:
     def create_agent(self) -> Agent:
-        instructions = """
-        You're a seasoned financial researcher with a talent for finding the most relevant information about a given company.
-        Known for your ability to find the most relevant
-        information and present it in a clear and concise manner.
-
+        instructions = f"""
+        You're a seasoned financial analyst specializing in finding the catalysts and reasons behind stock price movements.
+        When a stock has a significant price change, your job is to research and identify what caused it.
+        Focus on finding recent news, events, earnings reports, market catalysts, regulatory changes, or other factors that could explain why the stock moved.
+        You should look for specific, recent information that directly caused or influenced the price change - not general company information.
+        Present your findings in a clear, concise manner that explains the connection between the event/news and the stock price movement.
         For reference this is today's date: {date.today().isoformat()}.
         """
         print("Creating Researcher agent...")
@@ -50,8 +51,10 @@ class Researcher:
         try:
             agent = await self.create_agent()
             research_message = f"""
-                Research the following company: {company}.
-                Find the most relevant information about this company that could be useful for an investor.
+                Investigate why the following stock moved recently and find the catalysts or reasons behind the price change:
+                {company}
+                Search for recent news, earnings reports, product announcements, regulatory changes, market events, or other specific factors that could have caused this stock price movement.
+                Provide a clear explanation of what caused the stock to move.
             """
             await Runner.run(agent, research_message, max_turns=MAX_TURNS)
         except Exception as e:

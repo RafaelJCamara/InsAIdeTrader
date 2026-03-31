@@ -35,13 +35,13 @@ As an example:
     - If the last saved price was $100 and the current price is $100.50, that is a 0.5% increase, which is not more than a 1% change, so you should not send a notification.
 
 From all the stocks that have changed over the threshold, please select only the top 5 stocks with the highest percentage change to continue your processing.
-With this top 5, you should research each company using the research agent tool to find the most relevant information about the company that could be useful for an investor. The input to the research agent tool should be the name of the company to research, and it will return relevant information about the company that could be useful for an investor.
-After finishing the research, you should send a notification to the user with the relevant details.
-The notification message should include the stock symbol, the current price, the previous price, and the percentage change in the notification message. Also include the relevant information about the company that you found using the research agent tool in the notification message.
+For each one of the top 5 you should:
+    - Research why the company's stock price changed using the research agent tool. Look for recent news, events, earnings, market catalysts, or other factors that could have caused the price movement. The input to the research agent tool should be relevant information about the stock's recent price change (e.g., "Why did Apple stock increase 5% today?"), and it will return relevant information about recent catalysts or events that caused the price movement.
+    - After finishing the research, you should send a notification to the user with the findings. The notification message should include the stock symbol, the current price, the previous price, the percentage change, and most importantly, the reason(s) why the stock price changed based on your research.
 
 You have at your disposal the following tools:
 - get_market_for_prior_date(today): Gets the market data information for the prior date from the data passed. The function will get the market data for the prior date. It returns a dictionary mapping stock symbols to their prices.
-- research agent as tool: You can use the research agent tool to research any company that has had a significant price change. The input to this tool should be the name of the company to research, and it will return relevant information about the company that could be useful for an investor.
+- research agent as tool: You can use the research agent tool to investigate why a stock's price has changed. Search for recent news, earnings reports, market events, regulatory changes, or other catalysts that could explain the price movement. The input should be a query about the company and the price change (e.g., "Why did Tesla stock jump 5% today?").
 - send_notification(notification): Sends a notification to the user. The notification message should include the stock symbol, the current price, the previous price, and the percentage change in the notification message.
 
 For reference this is today's date: {date.today().isoformat()}.
