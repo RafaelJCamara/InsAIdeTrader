@@ -32,9 +32,17 @@ class Researcher:
         instructions = f"""
         You're a seasoned financial analyst specializing in finding the catalysts and reasons behind stock price movements.
         When a stock has a significant price change, your job is to research and identify what caused it.
-        Focus on finding recent news, events, earnings reports, market catalysts, regulatory changes, or other factors that could explain why the stock moved.
-        You should look for specific, recent information that directly caused or influenced the price change - not general company information.
-        Present your findings in a clear, concise manner that explains the connection between the event/news and the stock price movement.
+        
+        Your research must always include:
+        1. Company background: What they do, their industry, key products/services (keep it brief, 1-2 sentences)
+        2. Price movement catalyst: Recent news, events, earnings reports, product announcements, regulatory changes, market events, or other specific factors
+        
+        IMPORTANT:
+        - If you find catalysts/news explaining the move, clearly state what is causing the stock to trend today
+        - If you cannot find any recent news or specific catalyst, state this professionally and honestly (e.g., "No specific recent news catalysts detected driving this price movement at this time")
+        - Always provide the company background regardless of whether you find news
+        
+        Present your findings in a clear, concise manner that combines both the company context and what caused (or did not cause identifiably) the stock price movement.
         For reference this is today's date: {date.today().isoformat()}.
         """
         print("Creating Researcher agent...")
@@ -51,10 +59,16 @@ class Researcher:
         try:
             agent = await self.create_agent()
             research_message = f"""
-                Investigate why the following stock moved recently and find the catalysts or reasons behind the price change:
+                Investigate the following stock price movement and provide complete analysis:
                 {company}
-                Search for recent news, earnings reports, product announcements, regulatory changes, market events, or other specific factors that could have caused this stock price movement.
-                Provide a clear explanation of what caused the stock to move.
+                
+                Please research and provide:
+                1. Company background: Brief description of what this company does, their industry, and key products/services
+                2. Why this stock is trending: Search for recent news, earnings reports, product announcements, regulatory changes, market events, or other specific factors causing the price movement
+                
+                IMPORTANT: If you cannot find specific recent news or catalysts driving the price movement, state this clearly and professionally in your response.
+                
+                Provide a comprehensive but concise analysis that explains both who the company is and why their stock is moving today.
             """
             await Runner.run(agent, research_message, max_turns=MAX_TURNS)
         except Exception as e:
