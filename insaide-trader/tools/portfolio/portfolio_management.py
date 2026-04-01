@@ -52,7 +52,6 @@ def buy_stock(symbol: str, shares: int):
     performance["percentage_change"] += 0.5  # Placeholder for performance change
     print(f"Updated performance after buying: {performance}")
     
-#TODO: If stock is 0, we remove the symbol
 @function_tool
 def sell_stock(symbol: str, shares: int):
     """Sells a specified number of shares of a stock.
@@ -69,5 +68,7 @@ def sell_stock(symbol: str, shares: int):
         performance["total_value"] -= shares * 100  # Placeholder for stock price
         performance["percentage_change"] -= 0.5  # Placeholder for performance change
         print(f"Updated performance after selling: {performance}")
+        if portfolio[symbol] == 0:
+            portfolio.pop(symbol)
     else:
         print(f"Not enough shares of {symbol} to sell. Current holdings: {portfolio.get(symbol, 0)}")
