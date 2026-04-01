@@ -1,6 +1,8 @@
+import asyncio
 import os
 import sys
 from pathlib import Path
+from telegram.constants import ChatAction
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -15,19 +17,17 @@ load_dotenv(override=True)
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
-#TODO: Save history of chat and send that as well to the LLM
-#TODO: While waiting for a response, we should see ... in the chat, indicating some activity
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     user_text = update.message.text
-    
-    portfolio_agent = Portfolio()
     
     if str(chat_id) != TELEGRAM_CHAT_ID:
         print(f"Received message from unauthorized chat ID {chat_id}, ignoring.")
         return
     
     print(f"Received message from Telegram: {user_text}")
+        
+    portfolio_agent = Portfolio(chat_id)
     
     result = await portfolio_agent.run(user_text)
     print(f"Agent result: {result}")

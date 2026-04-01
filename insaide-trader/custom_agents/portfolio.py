@@ -1,6 +1,6 @@
 import os
 
-from agents import Agent, OpenAIChatCompletionsModel, Runner
+from agents import Agent, OpenAIChatCompletionsModel, Runner, SQLiteSession
 from dotenv import load_dotenv
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
@@ -45,6 +45,13 @@ tools = [
 ]
 
 class Portfolio:
+    
+    def __init__(self, chat_id:str):
+        self.chat_id = chat_id
+        
+    def _get_session(self):
+        return SQLiteSession(str(self.chat_id), "bot_memory.db")
+
     def create_agent(self) -> Agent:
         print("Creating Portfolio agent...")
         agent = Agent(
@@ -59,7 +66,7 @@ class Portfolio:
         print(f"Running the Portfolio agent with message: {message}")
         try:
             agent = self.create_agent()
-            result = await Runner.run(agent, message, max_turns=MAX_TURNS)
+            result = await Runner.run(agent, message, max_turns=MAX_TURNS, session=self._get_session())
             return result.final_output
         except Exception as e:
             print(f"An error occurred: {e}")
