@@ -16,8 +16,10 @@ def get_ticker_from_name(company_name: str):
     # The Tickers v3 endpoint is the best for 'search' functionality
     url = "https://api.polygon.io/v3/reference/tickers"
     
+    sanitized_company_name = company_name.strip().title()
+    
     params = {
-        "search": company_name,
+        "search": sanitized_company_name,
         "active": "true",    # Only show companies currently trading
         "market": "stocks",  # Filter out crypto/forex if not needed
         "type": "CS",        # Common Stock only
@@ -26,6 +28,7 @@ def get_ticker_from_name(company_name: str):
     }
 
     try:
+        print(f"Searching for '{sanitized_company_name}'")
         response = requests.get(url, params=params)
         response.raise_for_status() # Check for HTTP errors
         data = response.json()

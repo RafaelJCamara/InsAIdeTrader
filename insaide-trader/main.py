@@ -17,4 +17,3 @@ print(client.get_market_status().market)
 
 #TODO: When asking for portfolio, instead of returning the symbols, we should have the company name alongside
 #TODO: Have the portfolio persisted somewhere else
-#TODO: Check how to make Polygon search not case sensitive, because right now if I search for "apple" instead of "Apple" it doesn't find the ticker, which is not ideal
