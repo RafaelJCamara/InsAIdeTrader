@@ -42,3 +42,28 @@ def get_ticker_from_name(company_name: str):
             
     except requests.exceptions.RequestException as e:
         return f"Error connecting to Polygon: {e}"
+    
+@function_tool
+def get_company_name_from_ticker(ticker: str):
+    """
+    Searches Polygon.io for the company name of a ticker symbol.
+    """
+    url = "https://api.polygon.io/v3/reference/tickers"
+    params = {
+        "ticker": ticker,
+        "active": "true",
+        "market": "stocks",
+        "type": "CS",
+        "limit": 1,
+        "apiKey": polygon_api_key
+    }
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        if data.get("status") == "OK" and data.get("results"):
+            return data["results"][0].get("name")
+        else:
+            return f"No results found for '{ticker}'."
+    except requests.exceptions.RequestException as e:
+        return f"Error connecting to Polygon: {e}"

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from tools.portfolio.portfolio_management import buy_stock, get_current_portfolio_holdings, get_portfolio_performance, sell_stock
-from tools.search.stock_search import get_ticker_from_name
+from tools.search.stock_search import get_company_name_from_ticker, get_ticker_from_name
 
 load_dotenv(override=True)
 
@@ -26,11 +26,12 @@ gemini_model = OpenAIChatCompletionsModel(
 instructions = """
 You are a portfolio management agent. Your job is to help the user manage their stock portfolio by providing insights, analysis, and recommendations based on the current market conditions and the user's portfolio holdings.
 You have access to the following tools:
-    - get_current_portfolio_holdings: This tool returns the user's current stock holdings in their portfolio, including the stock symbols to the number of shares held. If 0 is the value for a stock, that means the user does not currently hold any shares of that stock, so don't include it in the response.
+    - get_current_portfolio_holdings: This tool returns the user's current stock holdings in their portfolio as a dictionary mapping stock symbols to the number of shares held. If 0 is the value for a stock, that means the user does not currently hold any shares of that stock, so don't include it in the response. IMPORTANT: After calling this tool, you MUST call get_company_name_from_ticker for each stock ticker to get the company name, then present both the company name and ticker symbol to the user (e.g., "Apple (AAPL): 10 shares").
     - get_portfolio_performance: This tool returns the current performance of the user's portfolio, including metrics such as total value and percentage change.
     - buy_stock(symbol, shares): This tool allows you to buy a specified number of shares of a stock. You can use this tool to make recommendations to the user about which stocks to buy based on your analysis.
     - sell_stock(symbol, shares): This tool allows you to sell a specified number of shares of a stock. You can use this tool to make recommendations to the user about which stocks to sell based on your analysis.
     - get_ticker_from_name(company_name): This tool allows you to search for the stock ticker symbol of a company based on its name. You can use this tool to find the ticker symbol for a company when the user mentions the company name instead of the ticker symbol.
+    - get_company_name_from_ticker(ticker): This tool allows you to search for the company name of a stock ticker symbol. You can use this tool to find the company name for a stock ticker symbol when the user mentions the ticker symbol instead of the company name.
 If in the conversation the user asks to buy a specific stock by company name, you must search for the corresponding stock symbol and use that symbol when calling the buy_stock tool. For example, if the user says "I want to buy 10 shares of Apple", you should search for the stock symbol for Apple (AAPL) and then call buy_stock("AAPL", 10).
 Whatever results the tools return, make sure to return to the user in comprehensive text.
 Please only respond in plain text, avoid using markdown.
@@ -41,7 +42,8 @@ tools = [
     get_portfolio_performance,
     buy_stock,
     sell_stock,
-    get_ticker_from_name
+    get_ticker_from_name,
+    get_company_name_from_ticker
 ]
 
 class Portfolio:
