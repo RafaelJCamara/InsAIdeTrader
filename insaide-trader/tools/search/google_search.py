@@ -19,7 +19,7 @@ gemini_model = OpenAIChatCompletionsModel(
     openai_client=gemini_client
 )
 
-
+#TODO: see how we can make this better, because it's failing a lot
 @function_tool
 async def google_search(query: str) -> str:
     """Searches the web for information related to the query and returns a brief summary of the takeaways.

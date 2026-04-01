@@ -15,6 +15,8 @@ load_dotenv(override=True)
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
+#TODO: Save history of chat and send that as well to the LLM
+#TODO: While waiting for a response, we should see ... in the chat, indicating some activity
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     user_text = update.message.text
