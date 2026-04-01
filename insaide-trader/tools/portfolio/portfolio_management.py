@@ -2,7 +2,7 @@ from agents import function_tool
 
 portfolio = {
     "AAPL": 10,
-    "GOOGL": 5,
+    "GOOG": 5,
     "TSLA": 2
 }
 
