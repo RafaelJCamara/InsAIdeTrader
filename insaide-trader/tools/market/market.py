@@ -26,6 +26,18 @@ def get_all_share_prices_polygon_eod() -> dict[str, float]:
     return {result.ticker: result.close for result in results}
 
 
+def _get_market_for_prior_date(today):
+    print(f"Getting market data for prior date based on reference date {today}...")
+    market_data = read_market(today)
+    if not market_data:
+        print("No market data found for prior date, fetching from API...")
+        market_data = get_all_share_prices_polygon_eod()
+        write_market(today, market_data)
+
+    print(f"Market data for prior date: {market_data}")
+    return market_data
+
+
 @function_tool
 def get_market_for_prior_date(today):
     """Gets the market data information for the prior date from the data passed.
@@ -36,20 +48,12 @@ def get_market_for_prior_date(today):
     Returns:
         dict[str, float]: A dictionary mapping stock symbols to their prices.
     """
-    
-    print(f"Getting market data for prior date based on reference date {today}...")
-    market_data = read_market(today)
-    if not market_data:
-        print("No market data found for prior date, fetching from API...")
-        market_data = get_all_share_prices_polygon_eod()
-        write_market(today, market_data)
-        
-    print(f"Market data for prior date: {market_data}")
-    return market_data
+    return _get_market_for_prior_date(today)
+
 
 def get_share_price_polygon_eod(symbol) -> float:
     today = datetime.now().date().strftime("%Y-%m-%d")
-    market_data = get_market_for_prior_date(today)
+    market_data = _get_market_for_prior_date(today)
     print(f"Market data for {today}: {market_data}")
     return market_data.get(symbol, 0.0)
 

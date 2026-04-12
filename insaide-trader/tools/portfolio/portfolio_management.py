@@ -1,74 +1,136 @@
 from agents import function_tool
+from tools.market.market import get_share_price
+from tools.portfolio.database import (
+    execute_buy,
+    execute_sell,
+    execute_deposit,
+    get_all_holdings,
+    get_balance,
+)
 
-portfolio = {
-    "AAPL": 10,
-    "GOOG": 5,
-    "TSLA": 2
-}
-
-performance = {
-    "total_value": 50000.01,
-    "percentage_change": 4.17
-}
 
 @function_tool
-def get_current_portfolio_holdings():
+def get_wallet_balance() -> str:
+    """Gets the current cash balance available in the wallet.
+
+    Returns:
+        str: A message with the current wallet balance.
+    """
+    balance = get_balance()
+    return f"Current wallet balance: ${balance:.2f}"
+
+
+@function_tool
+def deposit_money(amount: float) -> str:
+    """Deposits money into the wallet so it can be used to buy stocks.
+
+    Args:
+        amount: The dollar amount to deposit. Must be positive.
+
+    Returns:
+        str: Confirmation with the new wallet balance.
+    """
+    try:
+        new_balance = execute_deposit(amount)
+        return f"Deposited ${amount:.2f}. New wallet balance: ${new_balance:.2f}"
+    except ValueError as e:
+        return f"Deposit failed: {e}"
+
+
+@function_tool
+def get_current_portfolio_holdings() -> str:
     """Gets the current portfolio holdings for the user.
 
     Returns:
-        dict[str, int]: A dictionary mapping stock symbols to the number of shares held.
+        str: A summary of current holdings including shares, average cost,
+             and current market value per position, plus the wallet balance.
     """
-    # Placeholder implementation - replace with actual portfolio retrieval logic
-    print("Retrieving current portfolio holdings...")
-    print(f"Current portfolio: {portfolio}")
-    return portfolio
+    holdings = get_all_holdings()
+    balance = get_balance()
+
+    if not holdings:
+        return f"Portfolio is empty. Wallet balance: ${balance:.2f}"
+
+    lines = []
+    total_market_value = 0.0
+    total_cost_basis = 0.0
+
+    for symbol, info in holdings.items():
+        shares = info["shares"]
+        avg_cost = info["avg_cost"]
+        current_price = get_share_price(symbol)
+        market_value = shares * current_price
+        cost_basis = shares * avg_cost
+        total_market_value += market_value
+        total_cost_basis += cost_basis
+        pnl = market_value - cost_basis
+        lines.append(
+            f"{symbol}: {shares} shares | avg cost ${avg_cost:.2f} | "
+            f"current ${current_price:.2f} | value ${market_value:.2f} | P&L ${pnl:+.2f}"
+        )
+
+    overall_pnl = total_market_value - total_cost_basis
+    lines.append(f"\nTotal market value: ${total_market_value:.2f}")
+    lines.append(f"Total cost basis: ${total_cost_basis:.2f}")
+    lines.append(f"Overall P&L: ${overall_pnl:+.2f}")
+    lines.append(f"Wallet balance (cash): ${balance:.2f}")
+
+    return "\n".join(lines)
+
 
 @function_tool
-def get_portfolio_performance():
-    """Gets the current performance of the user's portfolio.
+def buy_stock(symbol: str, shares: int) -> str:
+    """Buys a specified number of shares of a stock at the current market price.
+    The total cost is deducted from the wallet balance.
+
+    Args:
+        symbol: The stock ticker symbol to buy (e.g. AAPL).
+        shares: The number of shares to buy. Must be positive.
 
     Returns:
-        dict: A dictionary containing performance metrics such as total value and percentage change.
-            - total_value (float): The total current value of the portfolio.
-            - percentage_change (float): The percentage change in the portfolio value compared to the previous day. Could be positive or negative.
+        str: Confirmation with trade details, or an error if funds are insufficient.
     """
-    print("Calculating portfolio performance...")
-    print(f"Portfolio performance: {performance}")
-    return performance
+    symbol = symbol.upper()
+    price = get_share_price(symbol)
+    if price <= 0:
+        return f"Could not get a valid price for {symbol}. Trade cancelled."
+
+    try:
+        result = execute_buy(symbol, shares, price)
+        return (
+            f"Bought {result['shares_bought']} shares of {symbol} "
+            f"at ${result['price_per_share']:.2f}/share. "
+            f"Total cost: ${result['total_cost']:.2f}. "
+            f"Remaining balance: ${result['remaining_balance']:.2f}"
+        )
+    except ValueError as e:
+        return f"Buy failed: {e}"
+
 
 @function_tool
-def buy_stock(symbol: str, shares: int):
-    """Buys a specified number of shares of a stock.
+def sell_stock(symbol: str, shares: int) -> str:
+    """Sells a specified number of shares of a stock at the current market price.
+    The proceeds are credited back to the wallet balance.
 
     Args:
-        symbol (str): The stock symbol to buy.
-        shares (int): The number of shares to buy.
-    """
-    print(f"Buying {shares} shares of {symbol}...")
-    # Placeholder implementation - replace with actual buying logic
-    portfolio[symbol] = portfolio.get(symbol, 0) + shares
-    print(f"Updated portfolio after buying: {portfolio}")
-    performance["total_value"] += shares * 100  # Placeholder for stock price
-    performance["percentage_change"] += 0.5  # Placeholder for performance change
-    print(f"Updated performance after buying: {performance}")
-    
-@function_tool
-def sell_stock(symbol: str, shares: int):
-    """Sells a specified number of shares of a stock.
+        symbol: The stock ticker symbol to sell (e.g. AAPL).
+        shares: The number of shares to sell. Must be positive.
 
-    Args:
-        symbol (str): The stock symbol to sell.
-        shares (int): The number of shares to sell.
+    Returns:
+        str: Confirmation with trade details, or an error if not enough shares are held.
     """
-    print(f"Selling {shares} shares of {symbol}...")
-    # Placeholder implementation - replace with actual selling logic
-    if symbol in portfolio and portfolio[symbol] >= shares:
-        portfolio[symbol] -= shares
-        print(f"Updated portfolio after selling: {portfolio}")
-        performance["total_value"] -= shares * 100  # Placeholder for stock price
-        performance["percentage_change"] -= 0.5  # Placeholder for performance change
-        print(f"Updated performance after selling: {performance}")
-        if portfolio[symbol] == 0:
-            portfolio.pop(symbol)
-    else:
-        print(f"Not enough shares of {symbol} to sell. Current holdings: {portfolio.get(symbol, 0)}")
+    symbol = symbol.upper()
+    price = get_share_price(symbol)
+    if price <= 0:
+        return f"Could not get a valid price for {symbol}. Trade cancelled."
+
+    try:
+        result = execute_sell(symbol, shares, price)
+        return (
+            f"Sold {result['shares_sold']} shares of {symbol} "
+            f"at ${result['price_per_share']:.2f}/share. "
+            f"Total proceeds: ${result['total_proceeds']:.2f}. "
+            f"Remaining balance: ${result['remaining_balance']:.2f}"
+        )
+    except ValueError as e:
+        return f"Sell failed: {e}"

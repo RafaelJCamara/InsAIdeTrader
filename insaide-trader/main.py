@@ -15,5 +15,4 @@ client = RESTClient(polygon_api_key)
 print(client.get_market_status().market)
 
 
-#TODO: Have the portfolio persisted somewhere else
 #TODO: Add structured outputs

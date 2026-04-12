@@ -24,6 +24,36 @@ cp .env.example .env
 | `TELEGRAM_CHAT_ID`              | Telegram chat ID where notifications are sent.                                               |
 | `ELEVEN_LABS_API_KEY`            | API key for [ElevenLabs](https://elevenlabs.io/), used for text-to-speech audio generation.  |
 
+## API
+
+The project exposes a FastAPI server that n8n (or any HTTP client) can call to interact with the portfolio.
+
+### Running the API
+
+```bash
+cd insaide-trader
+uv run python api.py
+```
+
+The server starts on `http://localhost:8000`. Interactive docs are available at `http://localhost:8000/docs`.
+
+### Endpoints
+
+| Method | Path                    | Description                                                        |
+|--------|-------------------------|--------------------------------------------------------------------|
+| `POST` | `/portfolio/chat`       | Send a natural-language message to the Portfolio agent              |
+| `GET`  | `/portfolio/holdings`   | List current portfolio holdings                                    |
+| `GET`  | `/portfolio/performance`| Get portfolio performance metrics                                  |
+| `POST` | `/portfolio/buy`        | Buy shares of a stock (`{ "symbol": "AAPL", "shares": 5 }`)       |
+| `POST` | `/portfolio/sell`       | Sell shares of a stock (`{ "symbol": "AAPL", "shares": 2 }`)      |
+| `GET`  | `/health`               | Health check                                                       |
+
+The `/portfolio/chat` endpoint accepts a JSON body with `message` (required) and an optional `chat_id` for session memory:
+
+```json
+{ "message": "Buy 10 shares of Apple", "chat_id": "my-session" }
+```
+
 ## Agents
 
 ### Monitor/Tracking agent

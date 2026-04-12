@@ -2,9 +2,14 @@ import os
 
 from agents import Agent, OpenAIChatCompletionsModel, Runner, SQLiteSession
 from dotenv import load_dotenv
-from dotenv import load_dotenv
 from openai import AsyncOpenAI
-from tools.portfolio.portfolio_management import buy_stock, get_current_portfolio_holdings, get_portfolio_performance, sell_stock
+from tools.portfolio.portfolio_management import (
+    buy_stock,
+    sell_stock,
+    get_current_portfolio_holdings,
+    get_wallet_balance,
+    deposit_money,
+)
 from tools.search.stock_search import get_company_name_from_ticker, get_ticker_from_name
 
 load_dotenv(override=True)
@@ -25,32 +30,46 @@ gemini_model = OpenAIChatCompletionsModel(
 
 instructions = """
 You are a portfolio management agent. Your job is to help the user manage their stock portfolio by providing insights, analysis, and recommendations based on the current market conditions and the user's portfolio holdings.
+
+IMPORTANT CONCEPTS:
+- The user has a cash wallet. Before buying stocks they must have enough money in their wallet.
+- To add money, the user can deposit funds using the deposit_money tool.
+- Buying stocks deducts money from the wallet at the current market price.
+- Selling stocks credits the proceeds back into the wallet.
+- The user cannot buy stocks if their wallet balance is too low.
+- The user cannot sell more shares than they currently hold.
+
 You have access to the following tools:
-    - get_current_portfolio_holdings: This tool returns the user's current stock holdings in their portfolio as a dictionary mapping stock symbols to the number of shares held. If 0 is the value for a stock, that means the user does not currently hold any shares of that stock, so don't include it in the response. IMPORTANT: After calling this tool, you MUST call get_company_name_from_ticker for each stock ticker to get the company name, then present both the company name and ticker symbol to the user (e.g., "Apple (AAPL): 10 shares").
-    - get_portfolio_performance: This tool returns the current performance of the user's portfolio, including metrics such as total value and percentage change.
-    - buy_stock(symbol, shares): This tool allows you to buy a specified number of shares of a stock. You can use this tool to make recommendations to the user about which stocks to buy based on your analysis.
-    - sell_stock(symbol, shares): This tool allows you to sell a specified number of shares of a stock. You can use this tool to make recommendations to the user about which stocks to sell based on your analysis.
-    - get_ticker_from_name(company_name): This tool allows you to search for the stock ticker symbol of a company based on its name. You can use this tool to find the ticker symbol for a company when the user mentions the company name instead of the ticker symbol.
-    - get_company_name_from_ticker(ticker): This tool allows you to search for the company name of a stock ticker symbol. You can use this tool to find the company name for a stock ticker symbol when the user mentions the ticker symbol instead of the company name.
-If in the conversation the user asks to buy a specific stock by company name, you must search for the corresponding stock symbol and use that symbol when calling the buy_stock tool. For example, if the user says "I want to buy 10 shares of Apple", you should search for the stock symbol for Apple (AAPL) and then call buy_stock("AAPL", 10).
+    - get_wallet_balance: Returns the current cash balance in the wallet.
+    - deposit_money(amount): Deposits money into the wallet. Use when the user wants to add funds.
+    - get_current_portfolio_holdings: Returns the user's current stock holdings with shares, average cost, current market value, P&L, and wallet balance. IMPORTANT: After calling this tool, you MUST call get_company_name_from_ticker for each stock ticker to get the company name, then present both the company name and ticker symbol to the user (e.g., "Apple (AAPL): 10 shares").
+    - buy_stock(symbol, shares): Buys shares at the current market price. The cost is deducted from the wallet. Will fail if the wallet balance is insufficient.
+    - sell_stock(symbol, shares): Sells shares at the current market price. The proceeds are added to the wallet. Will fail if the user doesn't hold enough shares.
+    - get_ticker_from_name(company_name): Searches for a stock ticker symbol by company name.
+    - get_company_name_from_ticker(ticker): Searches for a company name by ticker symbol.
+
+If the user asks to buy a stock by company name, first look up the ticker with get_ticker_from_name, then call buy_stock with that ticker.
+If a buy or sell fails (insufficient funds or shares), relay the error clearly and suggest alternatives (e.g., deposit more money, sell fewer shares).
 Whatever results the tools return, make sure to return to the user in comprehensive text.
 Please only respond in plain text, avoid using markdown.
 """
 
 tools = [
+    get_wallet_balance,
+    deposit_money,
     get_current_portfolio_holdings,
-    get_portfolio_performance,
     buy_stock,
     sell_stock,
     get_ticker_from_name,
-    get_company_name_from_ticker
+    get_company_name_from_ticker,
 ]
 
+
 class Portfolio:
-    
-    def __init__(self, chat_id:str):
+
+    def __init__(self, chat_id: str):
         self.chat_id = chat_id
-        
+
     def _get_session(self):
         return SQLiteSession(str(self.chat_id), "bot_memory.db")
 
@@ -60,15 +79,17 @@ class Portfolio:
             name="Portfolio Agent",
             instructions=instructions,
             model=gemini_model,
-            tools=tools
+            tools=tools,
         )
         return agent
-    
+
     async def run(self, message: str) -> str:
         print(f"Running the Portfolio agent with message: {message}")
         try:
             agent = self.create_agent()
-            result = await Runner.run(agent, message, max_turns=MAX_TURNS, session=self._get_session())
+            result = await Runner.run(
+                agent, message, max_turns=MAX_TURNS, session=self._get_session()
+            )
             return result.final_output
         except Exception as e:
             print(f"An error occurred: {e}")
