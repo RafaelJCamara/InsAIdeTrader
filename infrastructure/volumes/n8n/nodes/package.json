@@ -1,0 +1,7 @@
+{
+  "name": "installed-nodes",
+  "private": true,
+  "dependencies": {
+    "@elevenlabs/n8n-nodes-elevenlabs": "0.2.2"
+  }
+}
