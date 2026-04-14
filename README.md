@@ -196,6 +196,24 @@ http://host.docker.internal:8000/portfolio/chat
 
 [ngrok](https://ngrok.com/) exposes the local n8n instance so Telegram webhooks can reach it. After starting a tunnel (`ngrok http 5678`), update `N8N_HOST` and `WEBHOOK_URL` in `infrastructure/docker-compose.yaml` with your ngrok URL and restart the container.
 
+### n8n Workflow (Voice & Text)
+
+As an alternative to the direct Telegram bot (`telegram_bot.py`), there's an n8n workflow that adds **voice message support**:
+
+![n8n workflow](docs/media/n8n_workflow.png)
+
+**How it works:**
+
+1. **Telegram webhook** receives incoming messages
+2. **Route by input type:**
+   - **Text message** → call the FastAPI `/portfolio/chat` endpoint → reply with text
+   - **Audio message** → transcribe → call `/portfolio/chat` → generate speech with ElevenLabs → reply with audio
+3. The core logic always goes through the Python API; n8n just handles the input/output format routing
+
+This gives users the choice of typing or speaking to the portfolio agent, with responses in the same format they used.
+
+**Why n8n?** This project uses n8n as a practical exercise in workflow automation. The same routing logic could be implemented as a dedicated router agent in Python -- n8n simply makes it visual and easy to iterate on without code changes.
+
 ## Project Structure
 
 ```
